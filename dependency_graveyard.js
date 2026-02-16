@@ -15,6 +15,7 @@
 
 const fs = require('fs');
 const https = require('https');
+const path = require('path');
 
 function fetchPackageInfo(packageName) {
     return new Promise((resolve, reject) => {
@@ -51,7 +52,22 @@ async function main() {
         return;
     }
 
-    const packageJsonPath = args[0];
+    let packageJsonPath = args[0];
+    
+    // Automatically append package.json if the path is a directory
+    try {
+        if (fs.existsSync(packageJsonPath) && fs.lstatSync(packageJsonPath).isDirectory()) {
+            const joinedPath = path.join(packageJsonPath, 'package.json');
+            if (fs.existsSync(joinedPath)) {
+                packageJsonPath = joinedPath;
+            } else {
+                console.error(`❌ Error: Could not find package.json in directory: ${args[0]}`);
+                return;
+            }
+        }
+    } catch (e) {
+        // Fallback to original path if lstat fails
+    }
     
     if (!fs.existsSync(packageJsonPath)) {
         console.error("❌ Error: package.json not found at path.");
